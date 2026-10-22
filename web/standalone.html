@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0a0c10">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Navigator 3 | MIDI DMX Control</title>
+  <style>
+/* =========================================================
+   NAVIGATOR 3 MIDI CONTROLLER - FOH DARK THEME STYLES
+   ========================================================= */
+
+:root {
+  --bg-primary: #0a0d14;
+  --bg-secondary: #121824;
+  --bg-surface: #1a2233;
+  --bg-surface-hover: #242f46;
+  --bg-pad: #151d2a;
+  --bg-pad-active: #00e5ff;
+  
+  --border-subtle: #243046;
+  --border-bright: #384b6c;
+
+  --text-main: #f0f4fc;
+  --text-muted: #7e8fa8;
+  --text-dim: #54647c;
+
+  --accent-cyan: #00f0ff;
+  --accent-cyan-glow: rgba(0, 240, 255, 0.35);
+  
+  --accent-amber: #ffb703;
+  --accent-amber-glow: rgba(255, 183, 3, 0.35);
+
+  --accent-magenta: #ff007f;
+  --accent-magenta-glow: rgba(255, 0, 127, 0.45);
+
+  --accent-red: #ff334b;
+  --accent-red-glow: rgba(255, 51, 75, 0.4);
+
+  --status-online: #00e676;
+  --status-offline: #ff1744;
+
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-primary);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  width: 100vw;
+  max-width: 100%;
+  background: radial-gradient(circle at 50% 0%, #151d2f 0%, var(--bg-primary) 70%);
+}
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 18px;
+  background-color: rgba(10, 13, 20, 0.95);
+  border-bottom: 1px solid var(--border-subtle);
+  backdrop-filter: blur(10px);
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, #00f0ff 0%, #0072ff 100%);
+  color: #000;
+  box-shadow: 0 0 15px var(--accent-cyan-glow);
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-title {
+  font-weight: 800;
+  font-size: 1.15rem;
+  letter-spacing: 1.5px;
+  background: linear-gradient(90deg, #ffffff, #88b7ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.brand-subtitle {
+  font-size: 0.68rem;
+  letter-spacing: 2px;
+  font-weight: 600;
+  color: var(--accent-cyan);
+}
+
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+}
+
+.status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background-color: var(--status-offline);
+  box-shadow: 0 0 8px var(--status-offline);
+  transition: all 0.3s ease;
+}
+
+.status-badge.connected .status-dot {
+  background-color: var(--status-online);
+  box-shadow: 0 0 10px var(--status-online);
+}
+
+.status-badge.simulated .status-dot {
+  background-color: var(--accent-amber);
+  box-shadow: 0 0 8px var(--accent-amber);
+}
+
+.latency-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background-color: var(--bg-surface);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+
+.latency-value {
+  color: var(--accent-cyan);
+  font-weight: 700;
+}
+
+.icon-btn {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-main);
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.icon-btn:hover {
+  background: var(--bg-surface-hover);
+  border-color: var(--border-bright);
+}
+
+.icon-btn:active {
+  transform: scale(0.94);
+}
+
+/* =========================================================
+   TOOLBAR & BANK SELECTOR
+   ========================================================= */
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+  gap: 12px;
+}
+
+.bank-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow-x: auto;
+}
+
+.toolbar-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+
+.bank-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.bank-btn {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.bank-btn:hover {
+  color: var(--text-main);
+  border-color: var(--border-bright);
+}
+
+.bank-btn.active {
+  background: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+  color: #000;
+  font-weight: 800;
+  box-shadow: 0 0 10px var(--accent-cyan-glow);
+}
+
+/* Octave Selector */
+.octave-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.octave-group {
+  display: flex;
+  align-items: center;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+
+.octave-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 1rem;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.octave-btn:hover {
+  background: var(--bg-surface-hover);
+  color: var(--accent-amber);
+}
+
+.octave-btn:active {
+  transform: scale(0.92);
+}
+
+.octave-badge {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--accent-amber);
+  padding: 0 8px;
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+}
+
+.quick-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-blackout {
+  background: linear-gradient(180deg, #2b0b12 0%, #170407 100%);
+  border: 1px solid #771221;
+  color: #ff6b7e;
+  padding: 6px 16px;
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: 0 0 12px var(--accent-red-glow);
+  transition: all 0.15s ease;
+}
+
+.btn-blackout:active {
+  transform: scale(0.95);
+  background: #ff1744;
+  color: #fff;
+}
+
+/* =========================================================
+   MATRIX 16-PAD GRID
+   ========================================================= */
+.matrix-container {
+  flex: 1;
+  padding: 12px 16px;
+  overflow: hidden;
+  display: flex;
+}
+
+.matrix-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  gap: 12px;
+  width: 100%;
+  height: 100%;
+}
+
+/* Pad Card Styling */
+.pad-btn {
+  position: relative;
+  background: linear-gradient(145deg, #172030 0%, #101622 100%);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: transform 0.08s ease, box-shadow 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.pad-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--border-subtle);
+  transition: all 0.2s ease;
+}
+
+.pad-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pad-index {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: var(--text-main);
+  letter-spacing: 0.5px;
+}
+
+.pad-led {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-bright);
+  transition: all 0.15s ease;
+}
+
+.pad-center {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  margin: 4px 0;
+}
+
+.pad-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #dbe4f3;
+  line-height: 1.2;
+}
+
+.pad-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pad-midi-badge {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  background: rgba(0, 0, 0, 0.4);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.pad-indicator {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+}
+
+/* Hover & Active / Trigger States */
+.pad-btn:hover {
+  border-color: var(--border-bright);
+  background: linear-gradient(145deg, #1c273a 0%, #131b2a 100%);
+}
+
+.pad-btn:active, .pad-btn.touch-active {
+  transform: scale(0.96);
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 20px var(--accent-cyan-glow);
+  background: #00364d;
+}
+
+.pad-btn.touch-active .pad-led {
+  background-color: var(--accent-cyan);
+  box-shadow: 0 0 12px var(--accent-cyan);
+}
+
+.pad-btn.is-active-scene {
+  border-color: var(--accent-cyan);
+  background: linear-gradient(145deg, #0e2938 0%, #071922 100%);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.25);
+}
+
+.pad-btn.is-active-scene::before {
+  background: var(--accent-cyan);
+  box-shadow: 0 0 8px var(--accent-cyan);
+}
+
+.pad-btn.is-active-scene .pad-led {
+  background-color: var(--accent-cyan);
+  box-shadow: 0 0 10px var(--accent-cyan);
+}
+
+.pad-btn.is-active-scene .pad-title {
+  color: #fff;
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+}
+
+.pad-btn.is-active-scene .pad-midi-badge {
+  color: var(--accent-cyan);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+}
+
+/* Accent Color Variations for Banks */
+.pad-btn[data-accent="magenta"].is-active-scene {
+  border-color: var(--accent-magenta);
+  box-shadow: 0 0 15px var(--accent-magenta-glow);
+}
+.pad-btn[data-accent="magenta"].is-active-scene::before,
+.pad-btn[data-accent="magenta"].is-active-scene .pad-led {
+  background-color: var(--accent-magenta);
+  box-shadow: 0 0 10px var(--accent-magenta);
+}
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
+.app-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 18px;
+  background-color: var(--bg-primary);
+  border-top: 1px solid var(--border-subtle);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.last-action {
+  font-family: var(--font-mono);
+  color: var(--accent-cyan);
+}
+
+.midi-meta {
+  display: flex;
+  gap: 14px;
+}
+
+.midi-meta span strong {
+  color: var(--text-main);
+}
+
+/* =========================================================
+   MODAL / SETTINGS DIALOG
+   ========================================================= */
+.modal-dialog {
+  margin: auto;
+  border: none;
+  background: transparent;
+  padding: 0;
+  max-width: 480px;
+  width: 90vw;
+}
+
+.modal-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+}
+
+.modal-content {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  color: var(--text-main);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modal-header h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.5rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.form-group.half {
+  flex: 1;
+}
+
+.form-group label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.input-hint {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"] {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  color: var(--text-main);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.form-group input:focus {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 8px var(--accent-cyan-glow);
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.82rem;
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btn {
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary {
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+}
+
+.btn-primary {
+  background: var(--accent-cyan);
+  color: #000;
+}
+
+.btn-primary:hover {
+  background: #33f3ff;
+  box-shadow: 0 0 12px var(--accent-cyan-glow);
+}
+
+/* =========================================================
+   RESPONSIVE ADAPTATIONS (Landscape vs Portrait Tablets)
+   ========================================================= */
+@media (max-width: 600px) {
+  .matrix-grid {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    gap: 8px;
+  }
+  .pad-btn {
+    padding: 8px 10px;
+  }
+  .pad-title {
+    font-size: 0.82rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .matrix-grid {
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+  }
+}
+
+</style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">NAVIGATOR 3</span>
+          <span class="brand-subtitle">DMX MIDI BRIDGE</span>
+        </div>
+      </div>
+
+      <div class="status-bar">
+        <div class="status-badge" id="statusBadge">
+          <span class="status-dot"></span>
+          <span class="status-text" id="statusText">DESCONECTADO</span>
+        </div>
+        <div class="latency-badge" id="latencyBadge">
+          <span class="latency-label">PING:</span>
+          <span class="latency-value" id="latencyVal">-- ms</span>
+        </div>
+        <button class="icon-btn" id="btnSettings" title="Ajustes">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Bank / Navigation Toolbar -->
+    <div class="toolbar">
+      <div class="bank-selector">
+        <span class="toolbar-label">BANCO:</span>
+        <div class="bank-buttons">
+          <button class="bank-btn active" data-bank="1">1 (Esc 1-16)</button>
+          <button class="bank-btn" data-bank="2">2 (Esc 17-32)</button>
+          <button class="bank-btn" data-bank="3">3 (Esc 33-48)</button>
+          <button class="bank-btn" data-bank="4">4 (Esc 49-64)</button>
+        </div>
+      </div>
+      <div class="octave-selector">
+        <span class="toolbar-label">OCTAVA:</span>
+        <div class="octave-group">
+          <button class="octave-btn" id="btnOctaveDown" title="Bajar Octava (-12 semitonos)">-</button>
+          <span class="octave-badge" id="octaveDisplay">OCT 0</span>
+          <button class="octave-btn" id="btnOctaveUp" title="Subir Octava (+12 semitonos)">+</button>
+        </div>
+      </div>
+      <div class="quick-actions">
+        <button class="btn-blackout" id="btnBlackout">
+          <span class="bo-icon">⭘</span> BLACKOUT / APAGAR
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Grid Matrix: 16 Tactile Pads -->
+    <main class="matrix-container">
+      <div class="matrix-grid" id="matrixGrid">
+        <!-- 16 pads will be generated dynamically by app.js -->
+      </div>
+    </main>
+
+    <!-- Activity Log / Info Bar Footer -->
+    <footer class="app-footer">
+      <div class="last-action" id="lastActionText">Listo. Selecciona una escena...</div>
+      <div class="midi-meta">
+        <span>CH: <strong id="footerChannel">1</strong></span>
+        <span>VEL: <strong>127</strong></span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Settings Modal -->
+  <dialog id="settingsModal" class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Ajustes de Conexión y MIDI</h2>
+        <button class="modal-close" id="btnCloseSettings">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="inputWsHost">Dirección IP o Host del ESP32:</label>
+          <div class="input-hint">Por defecto se conecta al mismo host que sirve la web. Si estás probando desde PC, pon la IP del ESP32 (ej: 192.168.1.150).</div>
+          <input type="text" id="inputWsHost" placeholder="ej: 192.168.1.150 o ws://luces.local:81">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group half">
+            <label for="inputMidiChannel">Canal MIDI (1-16):</label>
+            <input type="number" id="inputMidiChannel" min="1" max="16" value="1">
+          </div>
+          <div class="form-group half">
+            <label for="inputBaseNote">Nota Base Escena 1:</label>
+            <input type="number" id="inputBaseNote" min="0" max="127" value="0">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="inputNoteDuration">Duración pulso Note-On (ms):</label>
+          <input type="number" id="inputNoteDuration" min="10" max="500" value="60">
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="checkSimMode" checked>
+            <span>Modo Simulación / Local (permite probar sin ESP32 conectado)</span>
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="btnResetSettings">Restablecer</button>
+          <button class="btn btn-primary" id="btnSaveSettings">Guardar y Conectar</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <script>
+/**
+ * NAVIGATOR 3 // DMX MIDI CONTROLLER
+ * High-performance, low-latency WebSocket Client for Android & Touchscreens
+ */
+
+(function () {
+  'use strict';
+
+  // --- Configuration & State ---
+  const STORAGE_KEY = 'navigator3_midi_cfg_v1';
+  
+  const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+  function getMidiNoteName(midiNumber) {
+    if (midiNumber < 0 || midiNumber > 127) return '--';
+    const name = NOTE_NAMES[midiNumber % 12];
+    const oct = Math.floor(midiNumber / 12) - 1; // 60 = C4, 48 = C3, 36 = C2
+    return `${name}${oct}`;
+  }
+
+  const state = {
+    wsHost: window.location.hostname || '192.168.1.150',
+    wsPort: '81',
+    midiChannel: 1,
+    baseNote: 48, // Nota base inicial: 48 (C3) ideal para sintetizadores
+    octaveOffset: 0, // Desplazamiento en semitonos (+/- 12 por octava)
+    pulseDurationMs: 60,
+    simMode: false,
+    currentBank: 1,
+    activeSceneGlobal: null,
+    isConnected: false,
+    latencyMs: null,
+    pingIntervalId: null,
+    ws: null,
+    customLabels: {} // { sceneNum: "Custom Name" }
+  };
+
+  // Load configuration from localStorage
+  function loadConfig() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        state.wsHost = parsed.wsHost || state.wsHost;
+        state.midiChannel = parsed.midiChannel || 1;
+        state.baseNote = parsed.baseNote !== undefined ? parsed.baseNote : 48;
+        state.octaveOffset = parsed.octaveOffset !== undefined ? parsed.octaveOffset : 0;
+        state.pulseDurationMs = parsed.pulseDurationMs || 60;
+        state.simMode = parsed.simMode !== undefined ? parsed.simMode : false;
+        state.customLabels = parsed.customLabels || {};
+      }
+    } catch (e) {
+      console.warn('Error loading localStorage config', e);
+    }
+  }
+
+  function saveConfig() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        wsHost: state.wsHost,
+        midiChannel: state.midiChannel,
+        baseNote: state.baseNote,
+        octaveOffset: state.octaveOffset,
+        pulseDurationMs: state.pulseDurationMs,
+        simMode: state.simMode,
+        customLabels: state.customLabels
+      }));
+    } catch (e) {
+      console.warn('Error saving config', e);
+    }
+  }
+
+  // --- DOM Elements ---
+  const el = {
+    statusBadge: document.getElementById('statusBadge'),
+    statusText: document.getElementById('statusText'),
+    latencyVal: document.getElementById('latencyVal'),
+    matrixGrid: document.getElementById('matrixGrid'),
+    btnBlackout: document.getElementById('btnBlackout'),
+    btnSettings: document.getElementById('btnSettings'),
+    lastActionText: document.getElementById('lastActionText'),
+    footerChannel: document.getElementById('footerChannel'),
+    bankButtons: document.querySelectorAll('.bank-btn'),
+    // Octave controls
+    btnOctaveDown: document.getElementById('btnOctaveDown'),
+    btnOctaveUp: document.getElementById('btnOctaveUp'),
+    octaveDisplay: document.getElementById('octaveDisplay'),
+    // Modal
+    settingsModal: document.getElementById('settingsModal'),
+    btnCloseSettings: document.getElementById('btnCloseSettings'),
+    btnSaveSettings: document.getElementById('btnSaveSettings'),
+    btnResetSettings: document.getElementById('btnResetSettings'),
+    inputWsHost: document.getElementById('inputWsHost'),
+    inputMidiChannel: document.getElementById('inputMidiChannel'),
+    inputBaseNote: document.getElementById('inputBaseNote'),
+    inputNoteDuration: document.getElementById('inputNoteDuration'),
+    checkSimMode: document.getElementById('checkSimMode')
+  };
+
+  function updateOctaveDisplay() {
+    if (!el.octaveDisplay) return;
+    const octShift = Math.round(state.octaveOffset / 12);
+    const sign = octShift > 0 ? `+${octShift}` : `${octShift}`;
+    const baseSample = Math.min(127, Math.max(0, state.baseNote + state.octaveOffset));
+    el.octaveDisplay.textContent = `OCT ${sign} (${getMidiNoteName(baseSample)})`;
+  }
+
+  // --- UI Rendering ---
+  function renderMatrix() {
+    el.matrixGrid.innerHTML = '';
+    const bankOffset = (state.currentBank - 1) * 16;
+    const accentColor = state.currentBank % 2 === 0 ? 'magenta' : 'cyan';
+
+    for (let i = 1; i <= 16; i++) {
+      const sceneNumber = bankOffset + i;
+      const rawNote = state.baseNote + (sceneNumber - 1) + state.octaveOffset;
+      const midiNote = Math.min(127, Math.max(0, rawNote));
+      const noteName = getMidiNoteName(midiNote);
+      const isCurrentActive = state.activeSceneGlobal === sceneNumber;
+      const customTitle = state.customLabels[sceneNumber] || `Escena ${sceneNumber}`;
+
+      const pad = document.createElement('button');
+      pad.className = `pad-btn ${isCurrentActive ? 'is-active-scene' : ''}`;
+      pad.dataset.scene = sceneNumber;
+      pad.dataset.note = midiNote;
+      pad.dataset.accent = accentColor;
+      pad.setAttribute('role', 'button');
+      pad.setAttribute('aria-label', `Disparar ${customTitle}`);
+
+      pad.innerHTML = `
+        <div class="pad-top">
+          <span class="pad-index">#${sceneNumber}</span>
+          <span class="pad-led"></span>
+        </div>
+        <div class="pad-center">
+          <span class="pad-title">${customTitle}</span>
+        </div>
+        <div class="pad-bottom">
+          <span class="pad-midi-badge">NOTE ${midiNote} · ${noteName}</span>
+          <span class="pad-indicator">${isCurrentActive ? 'ON AIR' : 'CUE'}</span>
+        </div>
+      `;
+
+      // Touch and Click Event binding
+      const handleTrigger = (ev) => {
+        ev.preventDefault();
+        triggerPad(sceneNumber, midiNote, pad);
+      };
+
+      pad.addEventListener('touchstart', handleTrigger, { passive: false });
+      pad.addEventListener('mousedown', handleTrigger);
+
+      el.matrixGrid.appendChild(pad);
+    }
+  }
+
+  function updateFooter() {
+    el.footerChannel.textContent = state.midiChannel;
+  }
+
+  function updateStatus(status, text) {
+    el.statusBadge.className = `status-badge ${status}`;
+    el.statusText.textContent = text;
+  }
+
+  // --- MIDI & Trigger Logic (Zero-Lag Ultra-Fast Path) ---
+  function sendBinaryMidi(status, note, velocity, duration) {
+    if (state.simMode) {
+      console.log('%c[SIM MIDI BINARY]', 'color: #00f0ff;', { status: status.toString(16), note, velocity });
+      return;
+    }
+    if (state.ws && state.ws.readyState === WebSocket.OPEN) {
+      const buf = new Uint8Array([status & 0xFF, note & 0x7F, velocity & 0x7F, Math.min(255, duration || 80)]);
+      state.ws.send(buf.buffer);
+    }
+  }
+
+  function triggerPad(sceneNumber, midiNote, padElement) {
+    // 1. DISPATCH PACKET FIRST OVER THE AIR (Immediate, < 1ms)
+    const statusByte = 0x90 | ((state.midiChannel - 1) & 0x0F);
+    sendBinaryMidi(statusByte, midiNote, 127, state.pulseDurationMs);
+
+    // 2. Micro-vibration (haptic)
+    if (navigator.vibrate) navigator.vibrate(20);
+
+    // 3. Ultra-fast local visual feedback without touching the whole DOM
+    if (padElement) {
+      padElement.classList.add('touch-active');
+      setTimeout(() => padElement.classList.remove('touch-active'), 100);
+    }
+
+    // 4. Update ON AIR / active state in-place (no innerHTML rebuild!)
+    if (state.activeSceneGlobal !== sceneNumber) {
+      state.activeSceneGlobal = sceneNumber;
+      const allPads = el.matrixGrid.querySelectorAll('.pad-button');
+      allPads.forEach(p => {
+        p.classList.remove('active');
+        const ind = p.querySelector('.pad-indicator');
+        if (ind) ind.textContent = 'CUE';
+      });
+      if (padElement) {
+        padElement.classList.add('active');
+        const curInd = padElement.querySelector('.pad-indicator');
+        if (curInd) curInd.textContent = 'ON AIR';
+      }
+    }
+
+    // 5. Update footer text
+    const timeStr = new Date().toLocaleTimeString();
+    el.lastActionText.innerHTML = `[${timeStr}] <strong>Escena ${sceneNumber}</strong> (Nota MIDI ${midiNote}, Canal ${state.midiChannel})`;
+  }
+
+  function triggerBlackout() {
+    if (navigator.vibrate) navigator.vibrate([40, 30, 40]);
+    state.activeSceneGlobal = null;
+    const allPads = el.matrixGrid.querySelectorAll('.pad-button');
+    allPads.forEach(p => {
+      p.classList.remove('active');
+      const ind = p.querySelector('.pad-indicator');
+      if (ind) ind.textContent = 'CUE';
+    });
+
+    const timeStr = new Date().toLocaleTimeString();
+    el.lastActionText.innerHTML = `[${timeStr}] <strong style="color:#ff334b">BLACKOUT / PANIC ENVIADO</strong>`;
+
+    sendBinaryMidi(0x80 | ((state.midiChannel - 1) & 0x0F), 0, 0, 80);
+    sendWebSocket({ type: 'blackout', channel: state.midiChannel });
+  }
+
+  // --- WebSocket Manager ---
+  function sendWebSocket(dataObj) {
+    if (state.simMode) {
+      console.log('%c[SIMULATOR MIDI TX]', 'color: #00f0ff; font-weight: bold;', dataObj);
+      return;
+    }
+
+    if (state.ws && state.ws.readyState === WebSocket.OPEN) {
+      state.ws.send(JSON.stringify(dataObj));
+    } else {
+      console.warn('WebSocket no conectado, mensaje no enviado:', dataObj);
+    }
+  }
+
+  function connectWebSocket() {
+    if (state.simMode) {
+      updateStatus('simulated', 'MODO SIMULACIÓN');
+      el.latencyVal.textContent = '<1 ms';
+      return;
+    }
+
+    if (state.ws) {
+      try {
+        state.ws.close();
+      } catch (e) {}
+    }
+
+    updateStatus('connecting', 'CONECTANDO...');
+
+    // Determine WS URL
+    let wsUrl = state.wsHost;
+    if (!wsUrl.startsWith('ws://') && !wsUrl.startsWith('wss://')) {
+      wsUrl = `ws://${wsUrl}:${state.wsPort}/ws`;
+    }
+
+    try {
+      state.ws = new WebSocket(wsUrl);
+    } catch (err) {
+      console.error('Error instantiating WebSocket:', err);
+      updateStatus('offline', 'ERROR URL');
+      scheduleReconnect();
+      return;
+    }
+
+    state.ws.onopen = () => {
+      state.ws.binaryType = 'arraybuffer';
+      console.log('[WS] Conectado exitosamente con ESP32:', wsUrl);
+      state.isConnected = true;
+      updateStatus('connected', 'EN LÍNEA');
+      startPingRoutine();
+    };
+
+    state.ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'pong') {
+          const rtt = state.lastPingTime ? Math.max(1, Math.round(performance.now() - state.lastPingTime)) : 2;
+          state.latencyMs = rtt;
+          el.latencyVal.textContent = `${rtt} ms`;
+        } else if (msg.type === 'ack_scene') {
+          // Hardware confirmation
+          console.log('[ESP32 ACK]', msg);
+        }
+      } catch (e) {
+        // Raw text message
+      }
+    };
+
+    state.ws.onclose = () => {
+      state.isConnected = false;
+      stopPingRoutine();
+      updateStatus('offline', 'DESCONECTADO');
+      el.latencyVal.textContent = '-- ms';
+      scheduleReconnect();
+    };
+
+    state.ws.onerror = (e) => {
+      console.warn('[WS] Error de comunicación', e);
+      state.ws.close();
+    };
+  }
+
+  let reconnectTimeout = null;
+  function scheduleReconnect() {
+    if (state.simMode) return;
+    if (reconnectTimeout) clearTimeout(reconnectTimeout);
+    reconnectTimeout = setTimeout(() => {
+      console.log('[WS] Intentando reconectar...');
+      connectWebSocket();
+    }, 3000);
+  }
+
+  function startPingRoutine() {
+    stopPingRoutine();
+    state.pingIntervalId = setInterval(() => {
+      if (state.ws && state.ws.readyState === WebSocket.OPEN) {
+        state.lastPingTime = performance.now();
+        state.ws.send(JSON.stringify({ type: 'ping', t: 1 }));
+      }
+    }, 2000);
+  }
+
+  function stopPingRoutine() {
+    if (state.pingIntervalId) {
+      clearInterval(state.pingIntervalId);
+      state.pingIntervalId = null;
+    }
+  }
+
+  // --- Event Listeners & UI Handlers ---
+  function setupEventListeners() {
+    // Bank switching
+    el.bankButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        el.bankButtons.forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.currentBank = parseInt(btn.dataset.bank, 10);
+        renderMatrix();
+      });
+    });
+
+    // Octave Transposition
+    if (el.btnOctaveDown) {
+      el.btnOctaveDown.addEventListener('click', () => {
+        if (state.baseNote + state.octaveOffset - 12 >= 0) {
+          state.octaveOffset -= 12;
+        } else {
+          state.octaveOffset = -state.baseNote;
+        }
+        updateOctaveDisplay();
+        renderMatrix();
+        saveConfig();
+        const baseSample = Math.min(127, Math.max(0, state.baseNote + state.octaveOffset));
+        el.lastActionText.innerHTML = `Octava cambiada a <strong>${el.octaveDisplay.textContent}</strong>`;
+      });
+    }
+
+    if (el.btnOctaveUp) {
+      el.btnOctaveUp.addEventListener('click', () => {
+        if (state.baseNote + state.octaveOffset + 12 <= 112) {
+          state.octaveOffset += 12;
+        }
+        updateOctaveDisplay();
+        renderMatrix();
+        saveConfig();
+        const baseSample = Math.min(127, Math.max(0, state.baseNote + state.octaveOffset));
+        el.lastActionText.innerHTML = `Octava cambiada a <strong>${el.octaveDisplay.textContent}</strong>`;
+      });
+    }
+
+    // Blackout button
+    el.btnBlackout.addEventListener('click', triggerBlackout);
+
+    // Settings Modal
+    el.btnSettings.addEventListener('click', () => {
+      el.inputWsHost.value = state.wsHost;
+      el.inputMidiChannel.value = state.midiChannel;
+      el.inputBaseNote.value = state.baseNote;
+      el.inputNoteDuration.value = state.pulseDurationMs;
+      el.checkSimMode.checked = state.simMode;
+      el.settingsModal.showModal();
+    });
+
+    el.btnCloseSettings.addEventListener('click', () => {
+      el.settingsModal.close();
+    });
+
+    el.btnSaveSettings.addEventListener('click', () => {
+      state.wsHost = el.inputWsHost.value.trim() || '192.168.1.150';
+      state.midiChannel = parseInt(el.inputMidiChannel.value, 10) || 1;
+      state.baseNote = parseInt(el.inputBaseNote.value, 10) || 0;
+      state.pulseDurationMs = parseInt(el.inputNoteDuration.value, 10) || 60;
+      state.simMode = el.checkSimMode.checked;
+
+      saveConfig();
+      updateFooter();
+      renderMatrix();
+      el.settingsModal.close();
+
+      connectWebSocket();
+    });
+
+    el.btnResetSettings.addEventListener('click', () => {
+      localStorage.removeItem(STORAGE_KEY);
+      loadConfig();
+      el.inputWsHost.value = state.wsHost;
+      el.inputMidiChannel.value = 1;
+      el.inputBaseNote.value = 0;
+      el.inputNoteDuration.value = 60;
+      el.checkSimMode.checked = false;
+    });
+
+    // Close modal on outside click
+    el.settingsModal.addEventListener('click', (e) => {
+      const rect = el.settingsModal.getBoundingClientRect();
+      const isInDialog = (rect.top <= e.clientY && e.clientY <= rect.top + rect.height
+        && rect.left <= e.clientX && e.clientX <= rect.left + rect.width);
+      if (!isInDialog) {
+        el.settingsModal.close();
+      }
+    });
+  }
+
+  // --- App Initialization ---
+  function init() {
+    loadConfig();
+    updateFooter();
+    updateOctaveDisplay();
+    renderMatrix();
+    setupEventListeners();
+    connectWebSocket();
+  }
+
+  // Run on DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+
+</script>
+</body>
+</html>

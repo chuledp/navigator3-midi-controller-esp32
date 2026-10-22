@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0a0c10">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Navigator 3 | MIDI DMX Control</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">NAVIGATOR 3</span>
+          <span class="brand-subtitle">DMX MIDI BRIDGE</span>
+        </div>
+      </div>
+
+      <div class="status-bar">
+        <div class="status-badge" id="statusBadge">
+          <span class="status-dot"></span>
+          <span class="status-text" id="statusText">DESCONECTADO</span>
+        </div>
+        <div class="latency-badge" id="latencyBadge">
+          <span class="latency-label">PING:</span>
+          <span class="latency-value" id="latencyVal">-- ms</span>
+        </div>
+        <button class="icon-btn" id="btnSettings" title="Ajustes">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Bank / Navigation Toolbar -->
+    <div class="toolbar">
+      <div class="bank-selector">
+        <span class="toolbar-label">BANCO:</span>
+        <div class="bank-buttons">
+          <button class="bank-btn active" data-bank="1">1 (Esc 1-16)</button>
+          <button class="bank-btn" data-bank="2">2 (Esc 17-32)</button>
+          <button class="bank-btn" data-bank="3">3 (Esc 33-48)</button>
+          <button class="bank-btn" data-bank="4">4 (Esc 49-64)</button>
+        </div>
+      </div>
+      <div class="octave-selector">
+        <span class="toolbar-label">OCTAVA:</span>
+        <div class="octave-group">
+          <button class="octave-btn" id="btnOctaveDown" title="Bajar Octava (-12 semitonos)">-</button>
+          <span class="octave-badge" id="octaveDisplay">OCT 0</span>
+          <button class="octave-btn" id="btnOctaveUp" title="Subir Octava (+12 semitonos)">+</button>
+        </div>
+      </div>
+      <div class="quick-actions">
+        <button class="btn-blackout" id="btnBlackout">
+          <span class="bo-icon">⭘</span> BLACKOUT / APAGAR
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Grid Matrix: 16 Tactile Pads -->
+    <main class="matrix-container">
+      <div class="matrix-grid" id="matrixGrid">
+        <!-- 16 pads will be generated dynamically by app.js -->
+      </div>
+    </main>
+
+    <!-- Activity Log / Info Bar Footer -->
+    <footer class="app-footer">
+      <div class="last-action" id="lastActionText">Listo. Selecciona una escena...</div>
+      <div class="midi-meta">
+        <span>CH: <strong id="footerChannel">1</strong></span>
+        <span>VEL: <strong>127</strong></span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Settings Modal -->
+  <dialog id="settingsModal" class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Ajustes de Conexión y MIDI</h2>
+        <button class="modal-close" id="btnCloseSettings">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="inputWsHost">Dirección IP o Host del ESP32:</label>
+          <div class="input-hint">Por defecto se conecta al mismo host que sirve la web. Si estás probando desde PC, pon la IP del ESP32 (ej: 192.168.1.150).</div>
+          <input type="text" id="inputWsHost" placeholder="ej: 192.168.1.150 o ws://luces.local:81">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group half">
+            <label for="inputMidiChannel">Canal MIDI (1-16):</label>
+            <input type="number" id="inputMidiChannel" min="1" max="16" value="1">
+          </div>
+          <div class="form-group half">
+            <label for="inputBaseNote">Nota Base Escena 1:</label>
+            <input type="number" id="inputBaseNote" min="0" max="127" value="0">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="inputNoteDuration">Duración pulso Note-On (ms):</label>
+          <input type="number" id="inputNoteDuration" min="10" max="500" value="60">
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="checkSimMode" checked>
+            <span>Modo Simulación / Local (permite probar sin ESP32 conectado)</span>
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="btnResetSettings">Restablecer</button>
+          <button class="btn btn-primary" id="btnSaveSettings">Guardar y Conectar</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
