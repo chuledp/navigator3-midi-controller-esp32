@@ -271,6 +271,96 @@ html, body {
   box-shadow: 0 0 10px var(--accent-cyan-glow);
 }
 
+/* View Mode Selector Button */
+.view-mode-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(0, 240, 255, 0.08);
+  border: 1px solid var(--accent-cyan);
+  color: var(--accent-cyan);
+  padding: 5px 11px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 0.74rem;
+  font-weight: 800;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: all 0.15s ease;
+}
+
+.view-mode-btn:hover {
+  background: var(--accent-cyan);
+  color: #000;
+  box-shadow: 0 0 12px var(--accent-cyan-glow);
+}
+
+.view-mode-btn:active {
+  transform: scale(0.94);
+}
+
+/* Subpage Selector (Pads 1-8 / 9-16) */
+.subpage-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.subpage-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.subpage-btn {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.subpage-btn:hover {
+  color: var(--text-main);
+  border-color: var(--border-bright);
+}
+
+.subpage-btn.active {
+  background: linear-gradient(135deg, #00f0ff 0%, #00b4d8 100%);
+  border-color: var(--accent-cyan);
+  color: #000;
+  font-weight: 800;
+  box-shadow: 0 0 10px var(--accent-cyan-glow);
+}
+
+/* 8-Pad MPC Sampler Mode Grid */
+.matrix-grid.mode-8-pads {
+  grid-template-columns: repeat(4, 1fr) !important;
+  grid-template-rows: repeat(2, 1fr) !important;
+  gap: 12px;
+}
+
+.matrix-grid.mode-8-pads .pad-btn {
+  padding: 12px 14px;
+}
+
+.matrix-grid.mode-8-pads .pad-index {
+  font-size: 1.35rem;
+}
+
+.matrix-grid.mode-8-pads .pad-title {
+  font-size: 1.05rem;
+  margin: 4px 0;
+}
+
+.matrix-grid.mode-8-pads .pad-led {
+  width: 12px;
+  height: 12px;
+}
+
 /* Octave Selector */
 .octave-selector {
   display: flex;
@@ -681,13 +771,100 @@ html, body {
 }
 
 /* =========================================================
-   RESPONSIVE ADAPTATIONS (Landscape vs Portrait Tablets)
+   RESPONSIVE ADAPTATIONS (Landscape vs Portrait Tablets & Phones)
    ========================================================= */
-@media (max-width: 600px) {
+
+/* Mobile Landscape (e.g. iPhone 13 landscape - max-height: 480px) */
+@media (max-height: 480px) {
+  .app-container {
+    padding: 4px 10px;
+    gap: 4px;
+  }
+  .app-header {
+    padding: 4px 8px;
+    min-height: 38px;
+    margin-bottom: 2px;
+  }
+  .brand-icon {
+    width: 24px;
+    height: 24px;
+  }
+  .brand-title {
+    font-size: 0.95rem;
+  }
+  .brand-subtitle {
+    display: none;
+  }
+  .status-badge {
+    padding: 3px 8px;
+    font-size: 0.72rem;
+  }
+  .latency-badge {
+    padding: 3px 8px;
+    font-size: 0.72rem;
+  }
+  .view-mode-btn {
+    padding: 3px 8px;
+    font-size: 0.7rem;
+  }
+  .toolbar {
+    padding: 4px 8px;
+    margin-bottom: 4px;
+    gap: 8px;
+  }
+  .toolbar-label {
+    display: none;
+  }
+  .bank-btn, .subpage-btn {
+    padding: 4px 8px;
+    font-size: 0.74rem;
+  }
+  .octave-btn {
+    width: 24px;
+    height: 24px;
+    font-size: 0.85rem;
+  }
+  .octave-badge {
+    font-size: 0.72rem;
+    padding: 0 4px;
+  }
+  .btn-blackout {
+    padding: 4px 10px;
+    font-size: 0.72rem;
+  }
+  .matrix-container {
+    padding: 2px 4px;
+  }
+  .matrix-grid {
+    gap: 6px;
+  }
+  .matrix-grid.mode-8-pads .pad-btn {
+    padding: 8px 12px;
+  }
+  .matrix-grid.mode-8-pads .pad-index {
+    font-size: 1.15rem;
+  }
+  .matrix-grid.mode-8-pads .pad-title {
+    font-size: 0.92rem;
+    margin: 2px 0;
+  }
+  .app-footer {
+    padding: 3px 12px;
+    min-height: 26px;
+    font-size: 0.72rem;
+  }
+}
+
+/* Mobile Portrait (max-width: 600px and portrait) */
+@media (max-width: 600px) and (orientation: portrait) {
   .matrix-grid {
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: repeat(8, 1fr);
     gap: 8px;
+  }
+  .matrix-grid.mode-8-pads {
+    grid-template-columns: repeat(2, 1fr) !important;
+    grid-template-rows: repeat(4, 1fr) !important;
   }
   .pad-btn {
     padding: 8px 10px;
@@ -698,7 +875,7 @@ html, body {
 }
 
 @media (min-width: 1024px) {
-  .matrix-grid {
+  .matrix-grid:not(.mode-8-pads) {
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(2, 1fr);
   }
@@ -723,6 +900,10 @@ html, body {
       </div>
 
       <div class="status-bar">
+        <button class="view-mode-btn" id="btnToggleViewMode" title="Cambiar modo de vista: 8 Pads (iPhone) / 16 Pads (iPad)">
+          <span id="viewModeIcon">📱</span>
+          <span id="viewModeText">8 PADS</span>
+        </button>
         <div class="status-badge" id="statusBadge">
           <span class="status-dot"></span>
           <span class="status-text" id="statusText">DESCONECTADO</span>
@@ -745,10 +926,17 @@ html, body {
       <div class="bank-selector">
         <span class="toolbar-label">BANCO:</span>
         <div class="bank-buttons">
-          <button class="bank-btn active" data-bank="1">1 (Esc 1-16)</button>
-          <button class="bank-btn" data-bank="2">2 (Esc 17-32)</button>
-          <button class="bank-btn" data-bank="3">3 (Esc 33-48)</button>
-          <button class="bank-btn" data-bank="4">4 (Esc 49-64)</button>
+          <button class="bank-btn active" data-bank="1">1</button>
+          <button class="bank-btn" data-bank="2">2</button>
+          <button class="bank-btn" data-bank="3">3</button>
+          <button class="bank-btn" data-bank="4">4</button>
+        </div>
+      </div>
+      <div class="subpage-selector" id="subpageSelector">
+        <span class="toolbar-label">PADS:</span>
+        <div class="subpage-buttons">
+          <button class="subpage-btn active" data-subpage="1">1 - 8</button>
+          <button class="subpage-btn" data-subpage="2">9 - 16</button>
         </div>
       </div>
       <div class="octave-selector">
@@ -857,6 +1045,8 @@ html, body {
     octaveOffset: 0, // Desplazamiento en semitonos (+/- 12 por octava)
     pulseDurationMs: 60,
     simMode: false,
+    viewMode: (window.innerWidth <= 900 || window.innerHeight <= 500) ? '8pads' : '16pads',
+    currentSubpage: 1, // 1: Pads 1-8, 2: Pads 9-16
     currentBank: 1,
     activeSceneGlobal: null,
     isConnected: false,
@@ -878,6 +1068,8 @@ html, body {
         state.octaveOffset = parsed.octaveOffset !== undefined ? parsed.octaveOffset : 0;
         state.pulseDurationMs = parsed.pulseDurationMs || 60;
         state.simMode = parsed.simMode !== undefined ? parsed.simMode : false;
+        state.viewMode = parsed.viewMode || state.viewMode;
+        state.currentSubpage = parsed.currentSubpage || 1;
         state.customLabels = parsed.customLabels || {};
       }
     } catch (e) {
@@ -894,6 +1086,8 @@ html, body {
         octaveOffset: state.octaveOffset,
         pulseDurationMs: state.pulseDurationMs,
         simMode: state.simMode,
+        viewMode: state.viewMode,
+        currentSubpage: state.currentSubpage,
         customLabels: state.customLabels
       }));
     } catch (e) {
@@ -912,6 +1106,12 @@ html, body {
     lastActionText: document.getElementById('lastActionText'),
     footerChannel: document.getElementById('footerChannel'),
     bankButtons: document.querySelectorAll('.bank-btn'),
+    // View mode toggle & Subpages
+    btnToggleViewMode: document.getElementById('btnToggleViewMode'),
+    viewModeIcon: document.getElementById('viewModeIcon'),
+    viewModeText: document.getElementById('viewModeText'),
+    subpageSelector: document.getElementById('subpageSelector'),
+    subpageButtons: document.querySelectorAll('.subpage-btn'),
     // Octave controls
     btnOctaveDown: document.getElementById('btnOctaveDown'),
     btnOctaveUp: document.getElementById('btnOctaveUp'),
@@ -928,6 +1128,30 @@ html, body {
     checkSimMode: document.getElementById('checkSimMode')
   };
 
+  function updateViewModeUI() {
+    const is8Pad = state.viewMode === '8pads';
+    if (el.viewModeText) {
+      el.viewModeText.textContent = is8Pad ? '8 PADS' : '16 PADS';
+    }
+    if (el.viewModeIcon) {
+      el.viewModeIcon.textContent = is8Pad ? '📱' : '📟';
+    }
+    if (el.btnToggleViewMode) {
+      el.btnToggleViewMode.title = is8Pad ? 'Modo actual: 8 Pads (iPhone). Click para cambiar a 16 Pads (iPad)' : 'Modo actual: 16 Pads (iPad). Click para cambiar a 8 Pads (iPhone)';
+    }
+    if (el.subpageSelector) {
+      el.subpageSelector.style.display = is8Pad ? 'flex' : 'none';
+    }
+    if (el.subpageButtons) {
+      el.subpageButtons.forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.subpage, 10) === state.currentSubpage);
+      });
+    }
+    if (el.matrixGrid) {
+      el.matrixGrid.classList.toggle('mode-8-pads', is8Pad);
+    }
+  }
+
   function updateOctaveDisplay() {
     if (!el.octaveDisplay) return;
     const octShift = Math.round(state.octaveOffset / 12);
@@ -942,7 +1166,11 @@ html, body {
     const bankOffset = (state.currentBank - 1) * 16;
     const accentColor = state.currentBank % 2 === 0 ? 'magenta' : 'cyan';
 
-    for (let i = 1; i <= 16; i++) {
+    const is8Pad = state.viewMode === '8pads';
+    const startIdx = is8Pad ? (state.currentSubpage - 1) * 8 + 1 : 1;
+    const endIdx = is8Pad ? startIdx + 7 : 16;
+
+    for (let i = startIdx; i <= endIdx; i++) {
       const sceneNumber = bankOffset + i;
       const rawNote = state.baseNote + (sceneNumber - 1) + state.octaveOffset;
       const midiNote = Math.min(127, Math.max(0, rawNote));
@@ -1169,6 +1397,29 @@ html, body {
 
   // --- Event Listeners & UI Handlers ---
   function setupEventListeners() {
+    // View Mode Toggle (8 Pads vs 16 Pads)
+    if (el.btnToggleViewMode) {
+      el.btnToggleViewMode.addEventListener('click', () => {
+        state.viewMode = state.viewMode === '8pads' ? '16pads' : '8pads';
+        updateViewModeUI();
+        renderMatrix();
+        saveConfig();
+      });
+    }
+
+    // Subpage Navigation (1-8 / 9-16)
+    if (el.subpageButtons) {
+      el.subpageButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          el.subpageButtons.forEach((b) => b.classList.remove('active'));
+          btn.classList.add('active');
+          state.currentSubpage = parseInt(btn.dataset.subpage, 10);
+          renderMatrix();
+          saveConfig();
+        });
+      });
+    }
+
     // Bank switching
     el.bankButtons.forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -1266,6 +1517,7 @@ html, body {
     loadConfig();
     updateFooter();
     updateOctaveDisplay();
+    updateViewModeUI();
     renderMatrix();
     setupEventListeners();
     connectWebSocket();
