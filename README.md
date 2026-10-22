@@ -1,6 +1,11 @@
-# Controlador MIDI DMX para Consola Navigator 3 (ESP32 SuperMini)
+# Controlador MIDI DMX Inalámbrico (ESP32-C3 SuperMini)
 
-Sistema puente inalámbrico para controlar escenas y funciones de la consola de iluminación **Navigator 3 DMX** desde una tablet Android mediante Wi-Fi local de baja latencia.
+Sistema puente de ultra-baja latencia (~10 ms) para controlar escenas y funciones de la consola de iluminación **Navigator 3 DMX**, sintetizadores (ej. **Arturia MicroFreak**) y samplers mediante Wi-Fi local autónomo y WebSockets binarios desde iPhone, iPad o tablets Android.
+
+---
+
+## 🚀 Repositorio GitHub
+**[https://github.com/chuledp/navigator3-midi-controller-esp32](https://github.com/chuledp/navigator3-midi-controller-esp32)**
 
 ---
 
@@ -8,68 +13,68 @@ Sistema puente inalámbrico para controlar escenas y funciones de la consola de 
 
 ```text
 navigator3-midi-controller/
-├── firmware/
-│   └── navigator3_esp32_firmware.ino  # Firmware Arduino para ESP32 SuperMini (WebSocket + MIDI UART)
+├── navigator3_firmware/
+│   ├── navigator3_firmware.ino  # Firmware Arduino ESP32-C3 (AP + WebServer + WebSocket binario + MIDI UART)
+│   └── web_page.h               # Web App completa embebida en memoria Flash (GZIP)
 ├── web/
-│   ├── index.html                     # Estructura principal de la Web App
-│   ├── style.css                      # Tema oscuro FOH de alto contraste y diseño táctil
-│   ├── app.js                         # Lógica WebSocket, bancos, notas MIDI, octavas y vibración
-│   └── standalone.html                # Versión todo-en-uno (lista para abrir local o desde tablet)
-└── README.md                          # Documentación del proyecto y guía de conexiones
+│   ├── standalone.html          # Web App lista para abrir en navegador
+│   ├── index.html               # Estructura desacoplada
+│   ├── style.css                # Estilos FOH Dark Theme de alto contraste
+│   └── app.js                   # Lógica WebSocket y MIDI
+└── README.md                    # Documentación y guía de conexiones
 ```
 
 ---
 
-## 🚀 Cómo probar la Web App AHORA (Antes de tener el ESP32)
+## 🔌 Conexionado Físico MIDI OUT (ESP32 SuperMini a DIN-5 / TRS Tipo B)
 
-1. Puedes abrir directamente el archivo [standalone.html](file:///Users/juliandipietro/.gemini/antigravity-ide/scratch/navigator3-midi-controller/web/standalone.html) en tu navegador preferido (Chrome, Safari, Firefox).
-2. O bien acceder al servidor local en tu red: `http://localhost:8080/standalone.html`.
+Basado en la especificación oficial **MIDI 1.0 (MMA CA-033 para 3.3V)** y validado con el adaptador TRS Tipo B:
 
-### ✨ Características de la Web App:
-- **Matriz de 16 botones táctiles:** Organizada en 4 bancos (Banco 1: Escenas 1-16, Banco 2: Escenas 17-32, etc.).
-- **Selector de Octavas (`-` / `+`):** Permite subir y bajar de octavas en tiempo real (+/- 12 semitonos), mostrando la nota musical equivalente (`C3`, `C4`, `D#4`, etc.) en cada botón, ideal para probar con sintetizadores.
-- **Modo Simulación:** Si no está conectado al ESP32, puedes probar las pulsaciones, ver qué notas enviaría y comprobar la respuesta visual en pantalla.
-- **Micro-vibración háptica:** Feedback táctil en tablets/teléfonos Android compatibles.
-- **Panel de Ajustes (Modal):** Permite cambiar la IP del ESP32, el canal MIDI (1-16), la nota base de inicio y la duración del pulso de disparo (Note-On -> Note-Off).
-- **Botón Blackout / Panic:** Apagado rápido con doble confirmación visual.
-- **Monitor de Latencia (Ping/Pong):** Medición de tiempo real de ida y vuelta hacia el ESP32.
-
----
-
-## 🔌 Conexionado Físico MIDI OUT (ESP32 SuperMini a DIN-5)
-
-Basado en la especificación oficial **MIDI 1.0 (MMA CA-033 para 3.3V)** y los colores específicos de tu cable:
-
-### 🎨 Código de Colores del Cable:
-* **Malla (Shield):** **GND** (Pin 2 DIN-5).
-* **Cable Blanco:** **Pin 4** (3.3V con resistencia de 33 Ω).
-* **Cable Rojo:** **Pin 5** (TX con resistencia de 10 Ω).
-* **Cable Naranja:** **Pin 1** (Sin conexión / Dejar aislado).
-* **Cable Negro:** **Pin 3** (Sin conexión / Dejar aislado).
+### 🎨 Código de Colores y Asignación de Pines:
+* **Malla (Shield / Sleeve):** **GND** (Pin 2 DIN-5).
+* **Cable Blanco (Tip):** **Pin 4** DIN-5 $\rightarrow$ **3.3V** con resistencia de **$33\ \Omega$**.
+* **Cable Rojo (Ring):** **Pin 5** DIN-5 $\rightarrow$ **TX (GPIO 21)** con resistencia de **$10\ \Omega$**.
+* **Cables Naranja y Negro:** Sin conexión (aislados).
 
 ### 📐 Diagrama Eléctrico de Conexión:
 
 ```text
-       ESP32 SuperMini                                 Cable MIDI (DIN-5)
-  +----------------------+
-  |                      |
-  |            Pin 3.3V  +-----[ Resistencia 33 Ω ]----+  Cable BLANCO  (Pin 4 DIN-5)
-  |                      |
-  |     Pin TX (GPIO 21) +-----[ Resistencia 10 Ω ]----+  Cable ROJO    (Pin 5 DIN-5)
-  |                      |
-  |             Pin GND  +-----------------------------+  MALLA (GND)   (Pin 2 DIN-5)
-  +----------------------+
-                                                          Cable NARANJA (Pin 1 - No conectar)
-                                                          Cable NEGRO   (Pin 3 - No conectar)
+       ESP32-C3 SuperMini                                Adaptador MIDI (TRS / DIN-5)
+  +--------------------------+
+  |                          |
+  |                 Pin 3.3V +-----[ Resistencia 33 Ω ]----+  Cable BLANCO (Tip / Pin 4 DIN)
+  |                          |
+  |         Pin TX (GPIO 21) +-----[ Resistencia 10 Ω ]----+  Cable ROJO   (Ring / Pin 5 DIN)
+  |                          |
+  |                  Pin GND +-----------------------------+  MALLA (Sleeve / Pin 2 DIN)
+  +--------------------------+
 ```
 
-### 📋 Tabla Resumen de Soldadura:
+---
 
-| Conductor del Cable | Pin Físico DIN-5 | Función MIDI | Conexión en el ESP32 SuperMini | Componente Intermedio |
-| :--- | :---: | :--- | :--- | :--- |
-| **Malla** | **Pin 2** | Masa / Tierra | **GND** | Conexión directa |
-| **Cable Blanco** | **Pin 4** | Alimentación (+3.3V) | **3.3V** | Resistencia **$33\ \Omega$** |
-| **Cable Rojo** | **Pin 5** | Datos TX | **TX** (ej. GPIO 21) | Resistencia **$10\ \Omega$** |
-| **Cable Naranja** | **Pin 1** | No usado | *Aislar con cinta / termocontraíble* | Ninguno |
-| **Cable Negro** | **Pin 3** | No usado | *Aislar con cinta / termocontraíble* | Ninguno |
+## ✨ Características de la Web App
 
+- **Ultra-Baja Latencia (~10 ms):** Transmisión por tramas binarias directas de 4 bytes (`Uint8Array`) por WebSocket, saltándose el parseo de strings JSON.
+- **Selector de Vista 📱 iPhone (8 Pads) vs 📟 iPad (16 Pads):**
+  - **Modo 8 Pads (iPhone):** Botones gigantes estilo Sampler MPC con navegación entre páginas `[1 - 8]` y `[9 - 16]`.
+  - **Modo 16 Pads (iPad):** Matriz 4x4 completa con todos los pads visibles simultáneamente.
+- **Optimización Apaisada (Landscape):** Encabezados compactados automáticamente en pantallas con altura reducida (< 480px).
+- **Selector de Octavas (`-` / `+`):** Transposición en tiempo real (+/- 12 semitonos) con visualización de nota (`C3`, `C4`, `D#4`, etc.).
+- **Blackout / Panic:** Apagado instantáneo con doble confirmación visual.
+- **Zero Internet Required:** El ESP32 crea su propio Access Point `Navigator3-MIDI` y aloja la aplicación completa en su flash.
+
+---
+
+## ⚡ Compilación y Flasheo (Arduino CLI)
+
+Para compilar y subir el firmware al ESP32-C3 SuperMini:
+
+```bash
+arduino-cli compile --fqbn esp32:esp32:esp32c3:CDCOnBoot=cdc,FlashMode=dio navigator3_firmware
+arduino-cli upload -p /dev/cu.usbmodem1101 --fqbn esp32:esp32:esp32c3:CDCOnBoot=cdc,FlashMode=dio navigator3_firmware
+```
+
+### 📶 Conexión Wi-Fi:
+* **SSID:** `Navigator3-MIDI`
+* **Password:** `12345678`
+* **URL:** `http://192.168.4.1` o `http://navigator.local`
