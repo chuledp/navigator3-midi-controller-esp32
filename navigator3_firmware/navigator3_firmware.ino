@@ -227,9 +227,9 @@ void setup() {
   // causar caídas mínimas de milivoltios que reinician el ESP32 en bucle si esto está activo.
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
 
-  // 2. SERIAL NO BLOQUEANTE
-  Serial.begin(115200);
-  Serial.setTxTimeoutMs(0); // CERO ms de timeout: si no hay PC conectado, descarta sin colgarse
+  // 2. ARRANQUE INSTANTÁNEO (0.5 SEGUNDOS)
+  // No llamamos a Serial.begin() para que el stack USB no espere el timeout de 2 minutos
+  // de negociación con una computadora cuando está enchufado a un cargador de pared.
 
   // 3. LED DE ESTADO: Encendido fijo durante el arranque inicial
   pinMode(STATUS_LED_PIN, OUTPUT);
