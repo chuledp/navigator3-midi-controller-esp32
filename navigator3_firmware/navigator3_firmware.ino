@@ -255,18 +255,18 @@ void setup() {
   IPAddress netMsk(255, 255, 255, 0);
   WiFi.softAPConfig(apIP, apIP, netMsk);
 
-  // Iniciar AP en canal 6 (estable, libre de interferencias)
-  bool apOk = WiFi.softAP(AP_SSID, AP_PASS, 6, 0, 4);
+  // Iniciar AP en canal 1 (universal, máxima compatibilidad con iPhone/iPad)
+  bool apOk = WiFi.softAP(AP_SSID, AP_PASS, 1, 0, 4);
   if (!apOk) {
     delay(200);
-    WiFi.softAP(AP_SSID, AP_PASS, 6, 0, 4);
+    WiFi.softAP(AP_SSID, AP_PASS, 1, 0, 4);
   }
 
-  // 6. OPTIMIZACIÓN RADIO (Sin ahorro de energía = 0 lag, potencia equilibrada a 13dBm para no provocar caídas de tensión)
+  // 6. OPTIMIZACIÓN RADIO (Sin ahorro de energía = 0 lag, máxima potencia de transmisión 19.5dBm)
   delay(100);
   WiFi.setSleep(false);
   esp_wifi_set_ps(WIFI_PS_NONE);
-  WiFi.setTxPower(WIFI_POWER_13dBm);
+  WiFi.setTxPower(WIFI_POWER_19_5dBm);
 
   // 7. DNS SERVER (Cualquier consulta DNS redirige a la IP del ESP32)
   dnsServer.start(53, "*", apIP);
@@ -322,4 +322,14 @@ void loop() {
   server.handleClient();
   webSocket.loop();
   processNoteOffQueue();
+
+  // Latido visual: un destello rápido del LED azul cada 1.5s certifica que el chip y el AP están vivos
+  static unsigned long lastHb = 0;
+  unsigned long now = millis();
+  if (now - lastHb >= 1500) {
+    lastHb = now;
+    digitalWrite(STATUS_LED_PIN, LOW); // ON
+    delay(20);
+    digitalWrite(STATUS_LED_PIN, HIGH); // OFF
+  }
 }
