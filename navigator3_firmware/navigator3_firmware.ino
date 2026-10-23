@@ -21,12 +21,24 @@
 #include <WiFi.h>
 #include <WebServer.h>
 #include <WebSocketsServer.h>
+#include <DNSServer.h>
 #include <ArduinoJson.h>
 #include <ESPmDNS.h>
 #include "esp_wifi.h"
-#include "esp_rom_gpio.h"
-#include "soc/gpio_sig_map.h"
+#include "soc/soc.h"
+#include "soc/rtc_cntl_reg.h"
 #include "web_page.h"
+
+// Desactivar el detector de brownout en el arranque previo a main()
+// Esto previene que el bootloader o la inicialización del chip entren en bucle de reset
+__attribute__((constructor)) void early_disable_brownout(void) {
+    WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
+}
+
+// Macros de logging seguro: NUNCA bloquean si el ESP32 está conectado a un cargador sin PC
+#define DBG_PRINT(x)         do { if (Serial) Serial.print(x); } while(0)
+#define DBG_PRINTLN(x)       do { if (Serial) Serial.println(x); } while(0)
+#define DBG_PRINTF(fmt, ...) do { if (Serial) Serial.printf(fmt, ##__VA_ARGS__); } while(0)
 
 // -----------------------------------------------------------------------------
 // PINES
@@ -48,6 +60,7 @@ const int   AP_MAX_CLIENTS = 4;       // maximo de clientes simultaneos
 // -----------------------------------------------------------------------------
 WebServer       server(80);
 WebSocketsServer webSocket(81);
+DNSServer       dnsServer;
 
 // -----------------------------------------------------------------------------
 // COLA NOTE-OFF
@@ -135,13 +148,17 @@ void processNoteOffQueue() {
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
   switch (type) {
     case WStype_DISCONNECTED:
-      Serial.printf("[WS] Cliente #%u desconectado\n", num);
+      DBG_PRINTF("[WS] Cliente #%u desconectado\n", num);
       break;
 
     case WStype_CONNECTED: {
       IPAddress ip = webSocket.remoteIP(num);
-      Serial.printf("[WS] Cliente #%u conectado desde %s\n", num, ip.toString().c_str());
+      DBG_PRINTF("[WS] Cliente #%u conectado desde %s\n", num, ip.toString().c_str());
       webSocket.sendTXT(num, "{\"type\":\"connected\",\"msg\":\"ESP32 SuperMini Listo\"}");
+      // Destello breve para indicar cliente web conectado
+      digitalWrite(STATUS_LED_PIN, LOW);
+      delay(40);
+      digitalWrite(STATUS_LED_PIN, HIGH);
       break;
     }
 
@@ -194,7 +211,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
 }
 
 // -----------------------------------------------------------------------------
-// HANDLERS HTTP (pagina informativa)
+// HANDLERS HTTP
 // -----------------------------------------------------------------------------
 void handleRoot() {
   server.sendHeader("Content-Encoding", "gzip");
@@ -202,73 +219,106 @@ void handleRoot() {
 }
 
 // -----------------------------------------------------------------------------
-// -----------------------------------------------------------------------------
 // SETUP
 // -----------------------------------------------------------------------------
 void setup() {
-  Serial.begin(115200);
-  Serial.setTxTimeoutMs(0); // NUNCA bloquear si no hay computadora conectada por USB
-  delay(200);
+  // 1. DESACTIVAR BROWNOUT DETECTOR
+  // En cargadores de pared o powerbanks, el pico inicial de corriente Wi-Fi puede
+  // causar caídas mínimas de milivoltios que reinician el ESP32 en bucle si esto está activo.
+  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
 
+  // 2. SERIAL NO BLOQUEANTE
+  Serial.begin(115200);
+  Serial.setTxTimeoutMs(0); // CERO ms de timeout: si no hay PC conectado, descarta sin colgarse
+
+  // 3. LED DE ESTADO: Encendido fijo durante el arranque inicial
   pinMode(STATUS_LED_PIN, OUTPUT);
-  digitalWrite(STATUS_LED_PIN, HIGH);
+  digitalWrite(STATUS_LED_PIN, LOW); // LOW = Encendido en ESP32-C3 SuperMini
 
   for (int i = 0; i < MAX_NOTE_EVENTS; i++) noteOffQueue[i].active = false;
 
-  // MIDI UART a 31250 baud:
+  // 4. MIDI UART a 31250 baud:
   // Serial0 -> TX exclusivo en GPIO 21
   // Serial1 -> TX exclusivo en GPIO 20
   Serial0.begin(31250, SERIAL_8N1, -1, 21);
   Serial1.begin(31250, SERIAL_8N1, -1, 20);
 
-  // --- CONFIGURAR AP ROBUSTO Y AUTÓNOMO ---
+  // 5. CONFIGURACIÓN WI-FI AP ROBUSTA
+  WiFi.disconnect(true);
+  WiFi.mode(WIFI_OFF);
+  delay(100);
+
   WiFi.persistent(false);
   WiFi.mode(WIFI_AP);
 
-  // Levantar el punto de acceso (canal 6, visible, max 4 clientes)
+  IPAddress apIP(192, 168, 4, 1);
+  IPAddress netMsk(255, 255, 255, 0);
+  WiFi.softAPConfig(apIP, apIP, netMsk);
+
+  // Iniciar AP en canal 6 (estable, libre de interferencias)
   bool apOk = WiFi.softAP(AP_SSID, AP_PASS, 6, 0, 4);
   if (!apOk) {
     delay(200);
-    WiFi.softAP(AP_SSID, AP_PASS);
+    WiFi.softAP(AP_SSID, AP_PASS, 6, 0, 4);
   }
 
-  // Optimización de radio Wi-Fi (SIEMPRE después de que el AP esté iniciado)
+  // 6. OPTIMIZACIÓN RADIO (Sin ahorro de energía = 0 lag, potencia equilibrada a 13dBm para no provocar caídas de tensión)
   delay(100);
   WiFi.setSleep(false);
   esp_wifi_set_ps(WIFI_PS_NONE);
-  WiFi.setTxPower(WIFI_POWER_19_5dBm);
+  WiFi.setTxPower(WIFI_POWER_13dBm);
 
-  // --- mDNS (navigator.local) ---
+  // 7. DNS SERVER (Cualquier consulta DNS redirige a la IP del ESP32)
+  dnsServer.start(53, "*", apIP);
+
+  // 8. mDNS (navigator.local)
   MDNS.begin("navigator");
   MDNS.addService("http", "tcp", 80);
 
-  // --- HTTP Web App ---
+  // 9. HTTP SERVIDOR & GESTIÓN DE CAPTIVE PORTAL
   server.on("/", handleRoot);
   server.on("/index.html", handleRoot);
   server.on("/standalone.html", handleRoot);
-  server.on("/generate_204", handleRoot);        // Captive portal Android
-  server.on("/gen_204", handleRoot);             // Captive portal Android
-  server.on("/hotspot-detect.html", handleRoot); // Captive portal iOS
+
+  // Para iOS (iPhone/iPad): hotspot-detect debe devolver "Success"
+  // Esto le confirma a iOS que la red está lista y EVITA que desconecte el Wi-Fi automáticamente
+  server.on("/hotspot-detect.html", []() {
+    server.send(200, "text/html", "<HTML><HEAD><TITLE>Success</TITLE></HEAD><BODY>Success</BODY></HTML>");
+  });
+
+  // Para Android: retorno 204
+  server.on("/generate_204", []() { server.send(204, "text/plain", ""); });
+  server.on("/gen_204", []() { server.send(204, "text/plain", ""); });
+
   server.onNotFound(handleRoot);
   server.begin();
-  Serial.println("[HTTP] Servidor en puerto 80");
+  DBG_PRINTLN("[HTTP] Servidor en puerto 80");
 
-  // --- WebSocket ---
+  // 10. WEBSOCKET
   webSocket.begin();
   webSocket.onEvent(webSocketEvent);
-  Serial.println("[WS] Servidor en puerto 81");
+  DBG_PRINTLN("[WS] Servidor en puerto 81");
 
-  Serial.println("=======================================");
-  Serial.println("  LISTO. Conectate a la red y abri:");
-  Serial.printf("  http://%s  o  http://navigator.local\n",
-                WiFi.softAPIP().toString().c_str());
-  Serial.println("=======================================\n");
+  DBG_PRINTLN("=======================================");
+  DBG_PRINTLN("  NAVIGATOR 3 MIDI AP LISTO");
+  DBG_PRINTF("  http://%s  o  http://navigator.local\n", WiFi.softAPIP().toString().c_str());
+  DBG_PRINTLN("=======================================\n");
+
+  // 11. CONFIRMACIÓN VISUAL POR HARDWARE
+  // 3 destellos rápidos del LED azul: AP y servidores iniciados con éxito
+  for (int i = 0; i < 3; i++) {
+    digitalWrite(STATUS_LED_PIN, LOW);
+    delay(70);
+    digitalWrite(STATUS_LED_PIN, HIGH);
+    delay(70);
+  }
 }
 
 // -----------------------------------------------------------------------------
 // LOOP
 // -----------------------------------------------------------------------------
 void loop() {
+  dnsServer.processNextRequest();
   server.handleClient();
   webSocket.loop();
   processNoteOffQueue();
