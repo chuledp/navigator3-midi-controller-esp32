@@ -202,14 +202,13 @@ void handleRoot() {
 }
 
 // -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 // SETUP
 // -----------------------------------------------------------------------------
 void setup() {
   Serial.begin(115200);
-  delay(300);
-  Serial.println("\n=======================================");
-  Serial.println("  NAVIGATOR 3 // MODO AP");
-  Serial.println("=======================================");
+  Serial.setTxTimeoutMs(0); // NUNCA bloquear si no hay computadora conectada por USB
+  delay(200);
 
   pinMode(STATUS_LED_PIN, OUTPUT);
   digitalWrite(STATUS_LED_PIN, HIGH);
@@ -221,43 +220,27 @@ void setup() {
   // Serial1 -> TX exclusivo en GPIO 20
   Serial0.begin(31250, SERIAL_8N1, -1, 21);
   Serial1.begin(31250, SERIAL_8N1, -1, 20);
-  Serial.println("[MIDI] UART0 activo en GPIO 21 | UART1 activo en GPIO 20 a 31250 baud");
 
-  // --- CONFIGURAR AP CON LATENCIA ULTRA-BAJA ---
+  // --- CONFIGURAR AP ROBUSTO Y AUTÓNOMO ---
+  WiFi.persistent(false);
   WiFi.mode(WIFI_AP);
-  WiFi.setSleep(false);
-  esp_wifi_set_ps(WIFI_PS_NONE);              // Desactiva ahorro de energia del radio RF
-  WiFi.setTxPower(WIFI_POWER_19_5dBm);         // Maxima potencia de transmision Wi-Fi
 
-  // IP fija del AP (por defecto ya es 192.168.4.1, pero lo dejamos explicito)
-  IPAddress apIP(192, 168, 4, 1);
-  IPAddress gateway(192, 168, 4, 1);
-  IPAddress subnet(255, 255, 255, 0);
-  WiFi.softAPConfig(apIP, gateway, subnet);
-
-  // Levantar el AP
-  bool apOk = WiFi.softAP(AP_SSID, AP_PASS, AP_CHANNEL, false, AP_MAX_CLIENTS);
-
+  // Levantar el punto de acceso (canal 6, visible, max 4 clientes)
+  bool apOk = WiFi.softAP(AP_SSID, AP_PASS, 6, 0, 4);
   if (!apOk) {
-    Serial.println("[AP] ERROR: no se pudo crear el AP. Reiniciando...");
-    delay(2000);
-    ESP.restart();
+    delay(200);
+    WiFi.softAP(AP_SSID, AP_PASS);
   }
 
-  Serial.println("[AP] Punto de acceso activo");
-  Serial.printf("[AP] SSID:     %s\n", AP_SSID);
-  Serial.printf("[AP] Password: %s\n", AP_PASS);
-  Serial.printf("[AP] IP:       %s\n", WiFi.softAPIP().toString().c_str());
-  Serial.printf("[AP] Canal:    %d\n", AP_CHANNEL);
-  Serial.printf("[AP] Max cli:  %d\n", AP_MAX_CLIENTS);
+  // Optimización de radio Wi-Fi (SIEMPRE después de que el AP esté iniciado)
+  delay(100);
+  WiFi.setSleep(false);
+  esp_wifi_set_ps(WIFI_PS_NONE);
+  WiFi.setTxPower(WIFI_POWER_19_5dBm);
 
-  // --- mDNS ---
-  if (MDNS.begin("navigator")) {
-    MDNS.addService("http", "tcp", 80);
-    Serial.println("[mDNS] http://navigator.local");
-  } else {
-    Serial.println("[mDNS] ERROR");
-  }
+  // --- mDNS (navigator.local) ---
+  MDNS.begin("navigator");
+  MDNS.addService("http", "tcp", 80);
 
   // --- HTTP Web App ---
   server.on("/", handleRoot);
