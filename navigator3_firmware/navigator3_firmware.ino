@@ -29,10 +29,10 @@
 #include "soc/rtc_cntl_reg.h"
 #include "web_page.h"
 
-// Desactivar el detector de brownout en el arranque previo a main()
-// Esto previene que el bootloader o la inicialización del chip entren en bucle de reset
-__attribute__((constructor)) void early_disable_brownout(void) {
-    WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
+// Anular completamente la inicialización del detector de brownout a nivel de linker
+// Esto previene que el hardware detector entre en bucle de reset por fluctuaciones normales de voltaje
+extern "C" void esp_brownout_init(void) {
+    // NOP
 }
 
 // Macros de logging seguro: NUNCA bloquean si el ESP32 está conectado a un cargador sin PC
