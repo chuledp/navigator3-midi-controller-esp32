@@ -78,3 +78,21 @@ arduino-cli upload -p /dev/cu.usbmodem1101 --fqbn esp32:esp32:esp32c3:CDCOnBoot=
 * **SSID:** `Navigator3-MIDI`
 * **Password:** `12345678`
 * **URL:** `http://192.168.4.1` o `http://navigator.local`
+
+---
+
+## 🏷️ Versiones del Firmware en GitHub
+
+El repositorio cuenta con dos versiones preservadas para distintas necesidades:
+
+| Versión / Tag | Rama / Branch | Tiempo de Arranque | Descripción |
+| :--- | :--- | :--- | :--- |
+| **`v1.1.0` (Recomendada)** | **`main`** | **< 1 segundo** | **Arranque instantáneo para vivo/escenario.** Elimina la espera de USB CDC. Emite en **Canal 1** con potencia máxima (+19.5 dBm), anulación de brownout y latido de confirmación en LED azul cada 1.5s. |
+| **`v1.0.0`** | **`v1.0-serial-debug`** | ~2 minutos en cargador / 0.2s en PC | **Versión de laboratorio.** Mantiene `Serial.begin()` y logs de texto por USB activos. Al conectarse a un cargador de pared sin PC, espera el timeout de 120s del stack USB antes de iniciar el Wi-Fi. |
+
+### Cómo volver a la versión anterior (v1.0.0):
+```bash
+git checkout v1.0-serial-debug
+# o mediante el tag:
+git checkout v1.0.0
+```
